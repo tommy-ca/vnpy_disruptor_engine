@@ -21,7 +21,7 @@ const ADAPTIVE_YIELD_COUNT: u32 = 256;
 const ADAPTIVE_BATCH_SIZE: usize = 1024;
 
 thread_local! {
-    static WAIT_COUNT: Cell<u32> = Cell::new(0);
+    static WAIT_COUNT: Cell<u32> = const { Cell::new(0) };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
