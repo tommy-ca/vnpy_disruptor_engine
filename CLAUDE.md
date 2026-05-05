@@ -11,7 +11,16 @@ This project uses `uv` exclusively. **Do not use `pip`, `uv pip`, or global pyth
   - Debug: `uv run maturin develop`
 - **Execution**: Always prefix commands with `uv run` to use the local venv.
 
+## Package Layout (Institutional Standard)
+- **`python/`**: Python source directory.
+- **`src/`**: Rust native tier.
+- **`tests/`**: TDD suite (Parity, E2E, Perf).
+- **`docs/`**: Specs, Design, and Audit.
+- **`examples/`**: Verification scenarios.
+
 ## Test & Benchmark Commands
+- **Type Check**: `uv run ty check`
+- **Lint & Format**: `uv run ruff check .` and `uv run ruff format .`
 - **Parity Tests**: `uv run pytest tests/test_parity.py`
 - **Integration Tests**: `uv run pytest tests/test_disruptor_integration.py`
 - **Non-Blocking Guards**: `uv run pytest tests/test_non_blocking_guards.py`

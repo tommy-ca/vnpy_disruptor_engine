@@ -55,8 +55,6 @@ select = [
     "RUF",  # Ruff-specific rules
 ]
 ignore = [
-    "ANN101", # Missing type annotation for self
-    "ANN102", # Missing type annotation for cls
     "ANN401", # Dynamically typed expressions (Any) are disallowed
     "S101",   # Use of assert detected
 ]
@@ -77,4 +75,7 @@ line-ending = "auto"
 exclude = ["tests/", "examples/"]
 
 [tool.ty.analysis]
-allowed-unresolved-imports = ["vnpy_disruptor", "vnpy_disruptor.*"]
+allowed-unresolved-imports = [
+    "vnpy_disruptor_engine.vnpy_disruptor",
+    "vnpy_disruptor_engine.vnpy_disruptor.*",
+]

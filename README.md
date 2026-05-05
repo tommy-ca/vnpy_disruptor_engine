@@ -22,6 +22,19 @@ uv sync
 uv run maturin develop --release
 ```
 
+## Project Structure
+```text
+vnpy_disruptor_engine/
+├── python/                   # Python source (Standardized)
+│   └── vnpy_disruptor_engine/
+│       ├── engine.py         # Main EventEngine
+│       └── py.typed          # Type marker
+├── src/                      # Rust native source
+├── tests/                    # TDD suite
+├── docs/                     # Technical specifications
+└── examples/                 # Verification scenarios
+```
+
 ## Configuration
 Set `event.use_disruptor: true` in your `vt_setting.json`.
 
