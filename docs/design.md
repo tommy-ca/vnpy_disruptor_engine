@@ -199,3 +199,21 @@ graph LR
 ### Flow Characteristics
 1.  **Concurrent Ingestion**: Multiple gateways and strategies can publish simultaneously without a global lock, utilizing atomic CAS for slot claiming.
 2.  **Serialized Dispatch**: A single worker thread ensures that event handlers are executed in the exact order they were committed to the buffer, preserving causal consistency for state-sensitive trading logic.
+
+## 14. Performance Hotspots & Optimization Brainstorming
+
+### 14.1 Identified Hotspots
+1.  **GIL Scheduling Latency**: The dominant factor in the ~20µs gap. Even if the Rust worker is ready, it must wait for the Python interpreter to yield the GIL.
+2.  **Per-Event Mutex Contention**: Each slot in the ring buffer is protected by a `parking_lot::Mutex`. While highly optimized, it remains a synchronization point.
+3.  **Frequent Reference Counting**: Every event involves at least two atomic reference count updates (one for the `Arc` and one for the `PyObject`).
+
+### 14.2 Brainstormed Optimizations (Future)
+1.  **Adaptive Micro-Batching**: 
+    - *Problem*: Low load causes 1:1 GIL acquisition per event.
+    - *Proposed*: Introduce a 5-10µs "spin-wait" in the worker before acquiring the GIL if only one event is available. This encourages natural batching without significantly impacting latency targets.
+2.  **Lock-Free Event Slots**: 
+    - *Proposed*: Replace `Mutex<Option<Arc<PyObject>>>` with a raw atomic pointer or an `ArcSwap` handle to eliminate mutex overhead in the hot path.
+3.  **Pre-allocated Object Pools**: 
+    - *Proposed*: Use a pool of pre-allocated Python `Event` objects for common event types (e.g., TIMER) to reduce allocation pressure on the Python heap.
+4.  **Zero-Copy Metadata**:
+    - *Proposed*: Store common metadata (event type, timestamp) as native Rust types in the ring buffer, only creating the Python `Event` object on the consumer side if needed.
