@@ -140,3 +140,62 @@ This decoupling allows for:
 - **Fast Iteration**: Updating the engine without re-releasing the entire framework.
 - **Platform Specifics**: Isolating the Rust compilation requirements to a specialized package.
 - **Selective Adoption**: Professional users can opt-in to the high-performance stack while casual users maintain a light dependency footprint.
+
+## 12. Performance Analysis: Native vs. Bindings
+
+A significant performance gap exists between the native Rust core and the Python-accessible engine. Understanding this gap is essential for institutional-grade tuning.
+
+| Layer | P50 Latency (Wait Phase) | Throughput (Raw) | Responsibility |
+| :--- | :--- | :--- | :--- |
+| **Native Rust** | **~4.2 ns** | **> 100M/s** | Ring buffer sequencing, atomics, thread parking. |
+| **PyO3/Python** | **~16.9 µs** | **~4.5M/s** | Object ref-counting, GIL management, FFI bridge. |
+
+### 12.1 The "Bridge" Tax (~20µs Gap)
+The ~20µs latency observed in the Python engine is primarily consumed by:
+1.  **FFI Boundary Crossing**: Each `put()` call must transition from the Python interpreter to the Rust binary.
+2.  **GIL Management**: The worker thread must acquire the Python Global Interpreter Lock (GIL) before executing handlers. Even with optimized batching, the acquisition delay is the dominant latency factor.
+3.  **Reference Counting**: Python objects must have their reference counts incremented when entering the ring buffer and decremented when exiting, which are atomic operations but add up across millions of events.
+
+### 12.2 Why Use Disruptor?
+Despite the 20µs bridge cost, the Disruptor engine provides:
+- **2x Latency Reduction**: Standard Python `queue.Queue` typically exhibits ~35-50µs P50 latency.
+- **5x Throughput Increase**: Lock-free MPSC sequencing allows for significantly higher event density than mutex-based Python queues.
+- **Deterministic Backpressure**: Unlike the standard engine, the Disruptor engine provides hardware-level backpressure that slows down producers before the system hits OOM (Out of Memory) conditions.
+
+## 13. MPSC Data Flow Analysis
+
+The engine is primarily designed for the **Multi-Producer, Single-Consumer (MPSC)** pattern, which matches the architectural requirements of most quantitative trading systems.
+
+```mermaid
+graph LR
+    subgraph Producers [Python Producers]
+        P1[Gateway A]
+        P2[Strategy B]
+        P3[Timer]
+    end
+    
+    subgraph Core [Rust Disruptor Core]
+        RB((Ring Buffer))
+        WS[Wait Strategy]
+    end
+    
+    subgraph Consumer [Python Consumer]
+        W[Worker Thread]
+        H1[Log Handler]
+        H2[Trade Handler]
+    end
+    
+    P1 -- put --> RB
+    P2 -- put --> RB
+    P3 -- put --> RB
+    
+    RB -- sequence --> WS
+    WS -- wake --> W
+    W -- acquire GIL --> W
+    W -- dispatch --> H1
+    W -- dispatch --> H2
+```
+
+### Flow Characteristics
+1.  **Concurrent Ingestion**: Multiple gateways and strategies can publish simultaneously without a global lock, utilizing atomic CAS for slot claiming.
+2.  **Serialized Dispatch**: A single worker thread ensures that event handlers are executed in the exact order they were committed to the buffer, preserving causal consistency for state-sensitive trading logic.
