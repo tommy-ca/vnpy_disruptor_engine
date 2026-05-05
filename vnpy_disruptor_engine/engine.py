@@ -12,9 +12,8 @@ import threading
 from threading import Thread
 from time import sleep
 
+from vnpy.event import EVENT_TIMER, Event, EventEngine
 from vnpy.trader.setting import SETTINGS
-from vnpy.event import Event, EventEngine, EVENT_TIMER
-
 
 # ---------------------------------------------------------------------------
 # Try to import the Rust extension
@@ -22,12 +21,13 @@ from vnpy.event import Event, EventEngine, EVENT_TIMER
 
 try:
     import vnpy_disruptor as _rust_mod
-    _RustProducer = _rust_mod.DisruptorProducer
+
+    _RustProducer = _rust_mod.DisruptorProducer  # type: ignore
 
     _RUST_AVAILABLE = True
 except ImportError:
     _RUST_AVAILABLE = False
-    _RustProducer = None  # type: ignore[assignment,misc]
+    _RustProducer = None  # type: ignore
 
 
 # ---------------------------------------------------------------------------
@@ -70,7 +70,9 @@ class DisruptorEventEngine(EventEngine):
                 "Ensure it is built via: uv run maturin develop"
             )
 
-        self._producer: _RustProducer = _RustProducer(self._buffer_size, self._wait_strategy)
+        self._producer: _RustProducer = _RustProducer(  # type: ignore
+            self._buffer_size, self._wait_strategy
+        )
         self._local: threading.local = threading.local()
         self._pre_start_queue: list[Event] = []
         self._lock: threading.Lock = threading.Lock()
@@ -96,16 +98,16 @@ class DisruptorEventEngine(EventEngine):
                     return
 
         try:
-            # Get or create thread-local producer handle for lock-free multi-producer support
+            # Get or create thread-local producer handle for lock-free multi-producer
             producer = getattr(self._local, "producer", None)
             if producer is None:
-                producer = self._producer.clone_producer()
+                producer = self._producer.clone_producer()  # type: ignore
                 self._local.producer = producer
 
             producer.publish(event)
         except RuntimeError as e:
             # Sync local active state with producer
-            if not self._producer.is_active():
+            if not self._producer.is_active():  # type: ignore
                 self._active = False
             raise e
 
@@ -126,7 +128,7 @@ class DisruptorEventEngine(EventEngine):
             # Get thread-local producer handle
             producer = getattr(self._local, "producer", None)
             if producer is None:
-                producer = self._producer.clone_producer()
+                producer = self._producer.clone_producer()  # type: ignore
                 self._local.producer = producer
 
             return producer.try_publish(event)
@@ -147,13 +149,13 @@ class DisruptorEventEngine(EventEngine):
             # Get or create thread-local producer handle
             producer = getattr(self._local, "producer", None)
             if producer is None:
-                producer = self._producer.clone_producer()
+                producer = self._producer.clone_producer()  # type: ignore
                 self._local.producer = producer
 
             producer.publish_batch(events)
         except RuntimeError as e:
             # Sync local active state with producer
-            if not self._producer.is_active():
+            if not self._producer.is_active():  # type: ignore
                 self._active = False
             raise e
 
@@ -169,7 +171,7 @@ class DisruptorEventEngine(EventEngine):
         self._active = True
 
         # Spawn the managed Rust worker thread for event dispatch
-        self._producer.start_worker(self._process_batch, self._core_id)
+        self._producer.start_worker(self._process_batch, self._core_id)  # type: ignore
 
         # Drain pre-start queue
         with self._lock:
@@ -194,7 +196,7 @@ class DisruptorEventEngine(EventEngine):
             self._timer_thread.join(timeout=0.1)
 
         # 2. Shutdown the Rust producer and worker thread.
-        self._producer.stop()
+        self._producer.stop()  # type: ignore
         self._timer_thread = None
 
     # ------------------------------------------------------------------
@@ -250,7 +252,7 @@ class DisruptorEventEngine(EventEngine):
 
     def is_active(self) -> bool:
         """Return ``True`` if the engine is running."""
-        return self._active and self._producer.is_active()
+        return self._active and self._producer.is_active()  # type: ignore
 
     def get_handler_count(self, event_type: str) -> int:
         """Return the number of handlers registered for *event_type*."""
@@ -258,7 +260,7 @@ class DisruptorEventEngine(EventEngine):
 
     def get_metrics(self) -> dict:
         """Return real-time metrics from the underlying Rust engine."""
-        return self._producer.get_metrics()
+        return self._producer.get_metrics()  # type: ignore
 
     def get_general_handler_count(self) -> int:
         """Return the number of general handlers."""
