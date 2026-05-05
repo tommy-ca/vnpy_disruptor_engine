@@ -20,7 +20,7 @@ from vnpy.trader.setting import SETTINGS
 # ---------------------------------------------------------------------------
 
 try:
-    import vnpy_disruptor as _rust_mod
+    from . import vnpy_disruptor as _rust_mod  # type: ignore
 
     _RustProducer = _rust_mod.DisruptorProducer  # type: ignore
 

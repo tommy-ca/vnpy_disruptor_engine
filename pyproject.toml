@@ -25,7 +25,8 @@ build-backend = "maturin"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
-module-name = "vnpy_disruptor"
+module-name = "vnpy_disruptor_engine.vnpy_disruptor"
+python-source = "python"
 python-packages = ["vnpy_disruptor_engine"]
 
 [tool.maturin.environment]
