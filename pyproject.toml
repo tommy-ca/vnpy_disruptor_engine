@@ -1,0 +1,33 @@
+[project]
+name = "vnpy-disruptor-engine"
+version = "0.1.0"
+description = "High-performance institutional-grade event engine for VeighNa"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "vnpy team"}]
+dependencies = [
+    "vnpy>=3.9.0",
+]
+
+[dependency-groups]
+dev = [
+    "psutil>=7.2.2",
+    "pytest>=8.0.0",
+    "pytest-benchmark>=4.0.0",
+]
+
+[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "vnpy_disruptor"
+python-packages = ["vnpy_disruptor_engine"]
+
+[tool.maturin.environment]
+PYO3_USE_ABI3_FORWARD_COMPATIBILITY = "1"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"

@@ -1,0 +1,15 @@
+[package]
+name = "vnpy-disruptor"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "vnpy_disruptor"
+crate-type = ["cdylib"]
+
+[dependencies]
+disruptor = "4.1"
+pyo3 = { version = "0.24", features = ["extension-module", "abi3-py310"] }
+parking_lot = "0.12"
+core_affinity = "0.8"
+arc-swap = "1.7"
