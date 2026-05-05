@@ -1,7 +1,6 @@
-import threading
 import time
-
-from vnpy_disruptor import DisruptorProducer
+import threading
+from vnpy_disruptor_engine.vnpy_disruptor import DisruptorProducer
 
 
 def measure_e2e(buffer_size, n=100_000):
@@ -10,7 +9,6 @@ def measure_e2e(buffer_size, n=100_000):
 
     received = [0]
     done = threading.Event()
-    lats = []
 
     def handler(batch):
         # We don't measure individual latency here to keep throughput high

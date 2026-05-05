@@ -9,12 +9,12 @@ Benchmarks the institutional-grade Disruptor engine's wait strategies:
 4. Standard Engine (Baseline)
 """
 
-import threading
 import time
+import threading
 from unittest.mock import patch
-
 from vnpy.event.engine import Event, EventEngine
 from vnpy.trader.setting import SETTINGS
+from vnpy_disruptor_engine import DisruptorEventEngine
 
 # SLOs and Config
 N_EVENTS = 500  # Reduced for faster latency sweep
@@ -137,12 +137,6 @@ def run_bench(name, engine_factory):
         if tput_batch:
             print(f"    TPS (Batch):  {tput_batch:10,.0f}")
 
-        if hasattr(engine, "get_metrics"):
-            m = engine.get_metrics()
-            print(
-                f"    Metrics:     processed={m['processed_count']:,}, backpressure={m['backpressure_events']}"
-            )
-
         return {
             "name": name,
             "p50": p50,
@@ -152,7 +146,6 @@ def run_bench(name, engine_factory):
         }
     except Exception as e:
         import traceback
-
         traceback.print_exc()
         print(f"    FAILED: {e}")
         return None
@@ -165,8 +158,6 @@ def main():
     results.append(run_bench("Standard Engine (Queue)", lambda: EventEngine()))
 
     # 2. Disruptor Strategies
-    from vnpy_disruptor_engine import DisruptorEventEngine
-
     strategies = ["busy_spin", "busy_spin_hint", "yielding", "sleeping", "blocking"]
     for strategy in strategies:
 
