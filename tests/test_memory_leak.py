@@ -1,7 +1,9 @@
-import time
 import os
+import time
+
 import psutil
 from vnpy.event import Event
+
 from vnpy_disruptor_engine import DisruptorEventEngine
 
 

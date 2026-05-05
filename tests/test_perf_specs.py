@@ -37,10 +37,8 @@ from dataclasses import dataclass, field
 from unittest.mock import patch
 
 import pytest
-
 from vnpy.event.engine import Event, EventEngine
 from vnpy.trader.setting import SETTINGS
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Spec SLOs (docs/architecture/specifications.md §6)

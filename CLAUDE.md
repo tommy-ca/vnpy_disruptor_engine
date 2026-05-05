@@ -6,7 +6,7 @@ High-performance event engine extension for VeighNa.
 This project uses `uv` exclusively. **Do not use `pip`, `uv pip`, or global python.**
 
 - **Setup Environment**: `uv sync` (Creates `.venv` with all dependencies)
-- **Build Rust Extension**: 
+- **Build Rust Extension**:
   - Release: `uv run maturin develop --release`
   - Debug: `uv run maturin develop`
 - **Execution**: Always prefix commands with `uv run` to use the local venv.

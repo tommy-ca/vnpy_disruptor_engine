@@ -20,7 +20,7 @@ sequenceDiagram
     participant Engine as DisruptorEventEngine
     participant RS as Rust Producer
     participant RB as Ring Buffer
-    
+
     App->>Engine: put(event)
     Engine->>RS: publish(event)
     RS->>RB: claim_sequence()
@@ -36,7 +36,7 @@ sequenceDiagram
     participant Worker as Rust Worker
     participant GIL as Python GIL
     participant Handler as Python Handler
-    
+
     Worker->>RB: waitFor(sequence)
     RB-->>Worker: batch_available
     Worker->>GIL: acquire()
@@ -91,7 +91,7 @@ Standard `put()` operations block when the ring buffer (or queue) is full. This 
 
 ### 8.1 Native Blocking Mechanics
 The underlying `disruptor-rs` crate implements a **bounded, zero-copy ring buffer**. When the buffer is full:
-- The **`MultiProducer`** natively blocks the calling thread during a `publish()` operation. 
+- The **`MultiProducer`** natively blocks the calling thread during a `publish()` operation.
 - It uses a **Busy-Spin** (or configured wait strategy) to wait until the consumer sequence has progressed far enough to permit claiming a new slot.
 - This provides essential **backpressure**, ensuring that upstream systems (like market data gateways) slow down rather than overwhelming the downstream consumer.
 

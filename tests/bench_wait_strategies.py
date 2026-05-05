@@ -9,9 +9,10 @@ Benchmarks the institutional-grade Disruptor engine's wait strategies:
 4. Standard Engine (Baseline)
 """
 
-import time
 import threading
+import time
 from unittest.mock import patch
+
 from vnpy.event.engine import Event, EventEngine
 from vnpy.trader.setting import SETTINGS
 

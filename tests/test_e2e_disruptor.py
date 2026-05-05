@@ -1,14 +1,15 @@
 import time
 import unittest
 from datetime import datetime
+from unittest.mock import patch
+
 from vnpy.event import Event
-from vnpy.trader.engine import MainEngine, BaseEngine
+from vnpy.trader.app import BaseApp
+from vnpy.trader.constant import Exchange
+from vnpy.trader.engine import BaseEngine, MainEngine
+from vnpy.trader.event import EVENT_TICK
 from vnpy.trader.gateway import BaseGateway
 from vnpy.trader.object import TickData
-from vnpy.trader.constant import Exchange
-from vnpy.trader.app import BaseApp
-from vnpy.trader.event import EVENT_TICK
-from unittest.mock import patch
 from vnpy.trader.setting import SETTINGS
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -96,9 +97,10 @@ class TestDisruptorE2E(unittest.TestCase):
 
         # 1. Create MainEngine (patching EventEngine to ensure Disruptor is used)
         from vnpy_disruptor_engine import DisruptorEventEngine
+
         with patch("vnpy.trader.engine.EventEngine", DisruptorEventEngine):
             main_engine = MainEngine()
-        
+
         # Verify we are actually using the Disruptor engine
         self.assertIsInstance(main_engine.event_engine, DisruptorEventEngine)
         self.assertTrue(main_engine.event_engine.is_active())

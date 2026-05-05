@@ -1,10 +1,13 @@
-import unittest
-import time
 import threading
+import time
+import unittest
 from unittest.mock import patch
+
 from vnpy.event import Event
-from vnpy_disruptor_engine import DisruptorEventEngine
 from vnpy.trader.setting import SETTINGS
+
+from vnpy_disruptor_engine import DisruptorEventEngine
+
 
 class TestNonBlockingGuards(unittest.TestCase):
     """
@@ -18,11 +21,11 @@ class TestNonBlockingGuards(unittest.TestCase):
         # Use a very small buffer for testing saturation
         with patch.dict(SETTINGS, {"event.buffer_size": 1024}):
             engine = DisruptorEventEngine(interval=1)
-            
+
             def slow_handler(event):
                 if event.type == "slow":
-                    time.sleep(0.1) # Faster but still slow
-            
+                    time.sleep(0.1)  # Faster but still slow
+
             engine.register("slow", slow_handler)
             engine.start()
 
@@ -32,21 +35,23 @@ class TestNonBlockingGuards(unittest.TestCase):
             def filler():
                 for i in range(1500):
                     engine.put(Event("slow", i))
-            
+
             fill_thread = threading.Thread(target=filler)
             fill_thread.start()
-            
+
             # Wait a bit for the filler to start filling
             time.sleep(0.5)
-            
+
             # 2. Try to publish with try_put. This should NOT block.
             start = time.perf_counter()
             success = engine.try_put(Event("any", "test"))
             end = time.perf_counter()
-            
+
             # If it blocked, it would wait for at least one slot to open (0.1s).
-            self.assertLess(end - start, 0.05, f"try_put() blocked for {end-start:.4f}s")
-            
+            self.assertLess(
+                end - start, 0.05, f"try_put() blocked for {end - start:.4f}s"
+            )
+
             engine.stop()
             fill_thread.join(timeout=1.0)
 
@@ -54,9 +59,9 @@ class TestNonBlockingGuards(unittest.TestCase):
         """Verifies that the worker thread can use try_put safely without deadlocking."""
         with patch.dict(SETTINGS, {"event.buffer_size": 1024}):
             engine = DisruptorEventEngine(interval=1)
-            
+
             results = []
-            
+
             def recursive_handler(event):
                 if event.type == "trigger":
                     # Use try_put inside the worker. Even if buffer is full, it shouldn't deadlock.
@@ -66,16 +71,21 @@ class TestNonBlockingGuards(unittest.TestCase):
 
             engine.register("trigger", recursive_handler)
             engine.start()
-            
+
             # Trigger the recursive call
             engine.put(Event("trigger"))
-            
+
             # Wait for processing
             time.sleep(1.0)
-            
-            self.assertIn("success", results, "Worker thread encountered issues during recursive try_put()")
-            
+
+            self.assertIn(
+                "success",
+                results,
+                "Worker thread encountered issues during recursive try_put()",
+            )
+
             engine.stop()
+
 
 if __name__ == "__main__":
     unittest.main()

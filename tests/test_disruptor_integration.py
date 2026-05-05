@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import time
 import signal
+import time
 from unittest.mock import MagicMock, patch
 
 import pytest
+from vnpy.event import EVENT_TIMER, Event
 
-from vnpy.event import Event, EVENT_TIMER
 try:
     from vnpy.event import create_engine
 except ImportError:
@@ -356,9 +356,10 @@ class TestBackwardCompatibility:
         assert hasattr(OmsEngine, "get_all_ticks")
 
     def test_existing_data_objects_work(self):
-        from vnpy.trader.object import TickData
-        from vnpy.trader.constant import Exchange
         from datetime import datetime
+
+        from vnpy.trader.constant import Exchange
+        from vnpy.trader.object import TickData
 
         tick = TickData(
             symbol="BTCUSDT",
@@ -371,7 +372,7 @@ class TestBackwardCompatibility:
         assert tick.vt_symbol == "BTCUSDT.LOCAL"
 
     def test_event_imports_unchanged(self):
-        from vnpy.event import Event, EventEngine, EVENT_TIMER
+        from vnpy.event import EVENT_TIMER, Event, EventEngine
 
         assert Event is not None
         assert EventEngine is not None
