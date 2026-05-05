@@ -21,7 +21,7 @@ const ADAPTIVE_YIELD_COUNT: u32 = 256;
 const ADAPTIVE_BATCH_SIZE: usize = 1024;
 
 thread_local! {
-    static WAIT_COUNT: Cell<u32> = const { Cell::new(0) };
+    pub static WAIT_COUNT: Cell<u32> = const { Cell::new(0) };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -56,7 +56,7 @@ pub struct AdaptiveContext {
 /// Achieves 0% CPU usage when idle while maintaining sub-20µs wakeup.
 #[derive(Copy, Clone)]
 pub struct AdaptiveBlocking {
-    context: *const AdaptiveContext,
+    pub context: *const AdaptiveContext,
 }
 
 // SAFETY: AdaptiveContext is Sync/Send. The pointer is valid as long as
@@ -615,4 +615,53 @@ impl DisruptorProducer {
 fn vnpy_disruptor(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<DisruptorProducer>()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::Ordering;
+
+    #[test]
+    fn test_adaptive_blocking_logic() {
+        let ctx = AdaptiveContext {
+            is_sleeping: AtomicBool::new(false),
+            worker_thread: Mutex::new(None),
+        };
+        let strategy = AdaptiveBlocking {
+            context: &ctx as *const _,
+        };
+
+        // Reset thread local for test
+        WAIT_COUNT.with(|c| c.set(0));
+
+        // 1. Spinning phase
+        for _ in 0..ADAPTIVE_SPIN_COUNT {
+            strategy.wait_for(Sequence::default());
+        }
+        assert!(!ctx.is_sleeping.load(Ordering::Acquire));
+
+        // 2. Yielding phase
+        for _ in 0..ADAPTIVE_YIELD_COUNT {
+            strategy.wait_for(Sequence::default());
+        }
+        assert!(!ctx.is_sleeping.load(Ordering::Acquire));
+
+        // 3. Parking phase (next call should trigger it)
+        strategy.wait_for(Sequence::default());
+        
+        // Verify final count
+        WAIT_COUNT.with(|c| {
+            assert_eq!(c.get(), ADAPTIVE_SPIN_COUNT + ADAPTIVE_YIELD_COUNT + 1);
+        });
+    }
+
+    #[test]
+    fn test_vnpy_event_mutex() {
+        let event = VnpyEvent::default();
+        {
+            let guard = event.data.lock();
+            assert!(guard.is_none());
+        }
+    }
 }

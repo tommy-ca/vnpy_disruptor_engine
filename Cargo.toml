@@ -5,11 +5,22 @@ edition = "2021"
 
 [lib]
 name = "vnpy_disruptor"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 disruptor = "4.1"
-pyo3 = { version = "0.24", features = ["extension-module", "abi3-py310"] }
+pyo3 = { version = "0.24", features = ["abi3-py310"] }
 parking_lot = "0.12"
 core_affinity = "0.8"
 arc-swap = "1.7"
+
+[features]
+extension-module = ["pyo3/extension-module"]
+default = ["extension-module"]
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "wait_strategy_bench"
+harness = false

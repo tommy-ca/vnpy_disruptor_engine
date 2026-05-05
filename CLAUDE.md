@@ -19,6 +19,8 @@ This project uses `uv` exclusively. **Do not use `pip`, `uv pip`, or global pyth
 - **`examples/`**: Verification scenarios.
 
 ## Test & Benchmark Commands
+- **Rust Unit Tests**: `cargo test --no-default-features`
+- **Rust Benchmarks**: `cargo bench --no-default-features`
 - **Type Check**: `uv run ty check`
 - **Lint & Format**: `uv run ruff check .` and `uv run ruff format .`
 - **Parity Tests**: `uv run pytest tests/test_parity.py`
